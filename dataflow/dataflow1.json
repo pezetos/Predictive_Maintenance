@@ -11,6 +11,13 @@
 					},
 					"name": "Telemetry",
 					"description": "telemetry"
+				},
+				{
+					"dataset": {
+						"referenceName": "ErrorsDS",
+						"type": "DatasetReference"
+					},
+					"name": "Errors"
 				}
 			],
 			"sinks": [],
@@ -27,7 +34,15 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     limit: 100,",
-				"     ignoreNoFilesFound: false) ~> Telemetry"
+				"     ignoreNoFilesFound: false) ~> Telemetry",
+				"source(output(",
+				"          datetime as timestamp,",
+				"          machineID as short,",
+				"          errorID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Errors"
 			]
 		}
 	}
