@@ -1,0 +1,9 @@
+{
+	"name": "hfactory",
+	"location": "polandcentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "890f1bf9-434e-419b-a56b-3f9d002465fe",
+		"tenantId": "63441aef-da0e-4397-bb7e-f9d4705e963b"
+	}
+}
