@@ -18,10 +18,33 @@
 						"type": "DatasetReference"
 					},
 					"name": "Errors"
+				},
+				{
+					"dataset": {
+						"referenceName": "FailuresDS",
+						"type": "DatasetReference"
+					},
+					"name": "Failures"
 				}
 			],
 			"sinks": [],
-			"transformations": [],
+			"transformations": [
+				{
+					"name": "ErrorsToColumns"
+				},
+				{
+					"name": "join1"
+				},
+				{
+					"name": "Window3h"
+				},
+				{
+					"name": "Window24h"
+				},
+				{
+					"name": "FailuresToColumns"
+				}
+			],
 			"scriptLines": [
 				"source(output(",
 				"          datetime as timestamp,",
@@ -42,7 +65,47 @@
 				"     ),",
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
-				"     ignoreNoFilesFound: false) ~> Errors"
+				"     ignoreNoFilesFound: false) ~> Errors",
+				"source(output(",
+				"          datetime as string,",
+				"          machineID as string,",
+				"          failure as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Failures",
+				"Errors pivot(groupBy(datetime,",
+				"          machineID),",
+				"     pivotBy(errorID),",
+				"     sumaWystapien = count(errorID),",
+				"     columnNaming: '$N_$V',",
+				"     lateral: true) ~> ErrorsToColumns",
+				"Telemetry, ErrorsToColumns join(Telemetry@datetime == ErrorsToColumns@datetime",
+				"     && Telemetry@machineID == ErrorsToColumns@machineID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1 window(asc(Telemetry@datetime, true),",
+				"     rangeSpecified: true,",
+				"     startRowOffset: -3L,",
+				"     endRowOffset: 0L,",
+				"     mean_rotate3h = mean(rotate),",
+				"          mean_pressure3h = mean(pressure),",
+				"          mean_volt3h = mean(volt),",
+				"          mean_vibration3h = mean(vibration)) ~> Window3h",
+				"Window3h window(asc(ErrorsToColumns@datetime, true),",
+				"     rangeSpecified: true,",
+				"     startRowOffset: -24L,",
+				"     endRowOffset: 0L,",
+				"     mean_volt24h = mean(volt),",
+				"          mean_rotate24h = mean(rotate)) ~> Window24h",
+				"Failures pivot(groupBy(datetime,",
+				"          machineID),",
+				"     pivotBy(failure),",
+				"     failure = count(failure),",
+				"     columnNaming: '$N_$V',",
+				"     lateral: true) ~> FailuresToColumns"
 			]
 		}
 	}
